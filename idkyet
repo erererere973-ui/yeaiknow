@@ -1,0 +1,75 @@
+-- Load Rayfield
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Arise Crossover - Rimuru Hub",
+    LoadingTitle = "Predator Mode Activated",
+    LoadingSubtitle = "by Rimuru 😈",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "AriseCrossoverHub",
+        FileName = "Config"
+    }
+})
+
+local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
+
+-- NPC Folder (deep path)
+local npcRoot = workspace:WaitForChild("__Main"):WaitForChild("__Enemies"):WaitForChild("Server")
+
+-- Function to get all NPCs
+local function getNPCs()
+    local list = {}
+    for _, zone in pairs(npcRoot:GetChildren()) do
+        for _, npc in pairs(zone:GetChildren()) do
+            table.insert(list, npc.Name)
+        end
+    end
+    return list
+end
+
+local npcList = getNPCs()
+local selectedNPC = npcList[1]
+local autofarm = false
+
+-- Dropdown for NPCs
+FarmTab:CreateDropdown({
+    Name = "Select NPC",
+    Options = npcList,
+    CurrentOption = npcList[1],
+    Flag = "NPCDropdown",
+    Callback = function(option)
+        selectedNPC = option
+    end,
+})
+
+-- Toggle Auto Farm
+FarmTab:CreateToggle({
+    Name = "Auto Farm NPC",
+    CurrentValue = false,
+    Flag = "AutoFarmToggle",
+    Callback = function(Value)
+        autofarm = Value
+        if autofarm then
+            task.spawn(function()
+                while autofarm do
+                    local char = game.Players.LocalPlayer.Character
+                    if not char then break end
+                    
+                    for _, zone in pairs(npcRoot:GetChildren()) do
+                        local npc = zone:FindFirstChild(selectedNPC)
+                        if npc and npc:FindFirstChild("HumanoidRootPart") then
+                            -- Teleport close to NPC
+                            char:MoveTo(npc.HumanoidRootPart.Position + Vector3.new(0, 3, 0))
+
+                            -- Attack (basic click — might need RemoteEvent for real damage)
+                            game:GetService("VirtualUser"):ClickButton1(Vector2.new(0,0))
+                        end
+                    end
+                    
+                    task.wait(0.5)
+                end
+            end)
+        end
+    end,
+})
