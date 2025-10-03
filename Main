@@ -73,6 +73,8 @@ FarmTab:CreateToggle({
     Flag = "AutoFarmToggle",
     Callback = function(Value)
         autofarm = Value
+        game.Players.LocalPlayer:SetAttribute("AutoClick", Value) -- This turns attack ON/OFF
+
         if autofarm then
             task.spawn(function()
                 while autofarm do
@@ -81,15 +83,8 @@ FarmTab:CreateToggle({
                     if npc and npc:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
                         -- Teleport close to NPC
                         char:MoveTo(npc.HumanoidRootPart.Position + Vector3.new(0, 3, 0))
-                        
-                        -- Attack via RemoteEvent
-                        if attackRemote then
-                            attackRemote:FireServer(npc)
-                        else
-                            game:GetService("VirtualUser"):ClickButton1(Vector2.new(0,0))
-                        end
                     end
-                    task.wait(0.5) -- adjust attack speed
+                    task.wait(0.5) -- Adjust to your liking
                 end
             end)
         end
