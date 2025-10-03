@@ -1,7 +1,7 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "Arise Crossover - Rimuru Hub",
+    Name = "Arise Crossover Hub",
     LoadingTitle = "Predator Mode Activated",
     LoadingSubtitle = "by Rimuru 😈",
     ConfigurationSaving = {
@@ -18,8 +18,10 @@ local npcMap = {}
 local selectedNPC = ""
 local autofarm = false
 
--- Create dropdown with placeholder list
-local dropdown = FarmTab:CreateDropdown({
+local npcDropdown
+
+-- Create Dropdown with placeholder
+npcDropdown = FarmTab:CreateDropdown({
     Name = "Select NPC",
     Options = npcList,
     CurrentOption = npcList[1],
@@ -29,7 +31,7 @@ local dropdown = FarmTab:CreateDropdown({
     end,
 })
 
--- Function to scan NPCs
+-- Function to scan NPCs dynamically
 local function scanNPCs()
     local npcRoot = workspace:FindFirstChild("__Main") and workspace.__Main:FindFirstChild("__Enemies") and workspace.__Main.__Enemies:FindFirstChild("Client")
     if not npcRoot then return end
@@ -59,11 +61,11 @@ local function scanNPCs()
         table.insert(npcList, "No NPCs Found")
     end
 
-    dropdown:UpdateOptions(npcList) -- update dropdown dynamically
+    npcDropdown:UpdateOptions(npcList) -- update dropdown live
     selectedNPC = npcList[1] or ""
 end
 
--- Add a refresh button
+-- Add Refresh Button
 FarmTab:CreateButton({
     Name = "Refresh NPC List",
     Callback = function()
@@ -116,5 +118,6 @@ FarmTab:CreateToggle({
     end,
 })
 
--- Initial scan
+-- Initial scan after 3 seconds to wait for enemies
+task.wait(3)
 scanNPCs()
