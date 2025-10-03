@@ -14,31 +14,31 @@ local Window = Rayfield:CreateWindow({
 
 local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
 
--- Enemy root folder
-local npcRoot = workspace:WaitForChild("__Main"):WaitForChild("__Enemies"):WaitForChild("Server")
+-- Enemy root inside Client
+local npcRoot = workspace:WaitForChild("__Main"):WaitForChild("__Enemies"):WaitForChild("Client")
 
--- Scan for NPCs and get readable names
 local npcList = {}
 local npcMap = {}
 
 local function scanNPCs()
     npcList = {}
     npcMap = {}
-    for _, zone in pairs(npcRoot:GetChildren()) do
-        for _, npc in pairs(zone:GetChildren()) do
-            local displayName = npc.Name -- fallback
-            if npc:FindFirstChild("Humanoid") and npc.Humanoid.DisplayName then
-                displayName = npc.Humanoid.DisplayName
-            elseif npc:FindFirstChild("Head") and npc.Head:FindFirstChild("NameTag") then
-                displayName = npc.Head.NameTag.Text
-            elseif npc:GetAttribute("DisplayName") then
-                displayName = npc:GetAttribute("DisplayName")
-            end
+    for _, npc in pairs(npcRoot:GetChildren()) do
+        local displayName = npc.Name
 
-            if not npcMap[displayName] then
-                table.insert(npcList, displayName)
-                npcMap[displayName] = npc.Name -- store NPC ID for search later
-            end
+        if npc:FindFirstChild("Humanoid") and npc.Humanoid.DisplayName then
+            displayName = npc.Humanoid.DisplayName
+        elseif npc:FindFirstChild("Head") and npc.Head:FindFirstChild("NameTag") then
+            displayName = npc.Head.NameTag.Text
+        elseif npc:FindFirstChild("DisplayName") then
+            displayName = npc.DisplayName.Value
+        elseif npc:GetAttribute("DisplayName") then
+            displayName = npc:GetAttribute("DisplayName")
+        end
+
+        if not npcMap[displayName] then
+            table.insert(npcList, displayName)
+            npcMap[displayName] = npc.Name -- store NPC id
         end
     end
 end
@@ -48,7 +48,7 @@ scanNPCs()
 local selectedNPC = npcList[1] or ""
 local autofarm = false
 
--- Dropdown for NPC selection
+-- Dropdown
 FarmTab:CreateDropdown({
     Name = "Select NPC",
     Options = npcList,
@@ -66,24 +66,40 @@ FarmTab:CreateToggle({
     Flag = "AutoFarmToggle",
     Callback = function(Value)
         autofarm = Value
-        game.Players.LocalPlayer:SetAttribute("AutoClick", Value) -- toggle AutoClicker
+        game.Players.LocalPlayer:SetAttribute("AutoClick", Value)
 
         if autofarm then
             task.spawn(function()
                 while autofarm do
-                    local npc = nil
-                    -- Search all zones for selected NPC
-                    for _, zone in pairs(npcRoot:GetChildren()) do
-                        npc = zone:FindFirstChild(npcMap[selectedNPC])
-                        if npc then break end
+                    local npcFound = nil
+
+                    -- Search for selected NPC live
+                    for _, npc in pairs(npcRoot:GetChildren()) do
+                        local name = npc.Name
+
+                        if npc:FindFirstChild("Humanoid") and npc.Humanoid.DisplayName then
+                            name = npc.Humanoid.DisplayName
+                        elseif npc:FindFirstChild("Head") and npc.Head:FindFirstChild("NameTag") then
+                            name = npc.Head.NameTag.Text
+                        elseif npc:FindFirstChild("DisplayName") then
+                            name = npc.DisplayName.Value
+                        elseif npc:GetAttribute("DisplayName") then
+                            name = npc:GetAttribute("DisplayName")
+                        end
+
+                        if name == selectedNPC then
+                            npcFound = npc
+                            break
+                        end
                     end
 
                     local char = game.Players.LocalPlayer.Character
-                    if npc and npc:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
-                        -- Teleport to NPC
-                        char:MoveTo(npc.HumanoidRootPart.Position + Vector3.new(0, 3, 0))
+                    if npcFound and npcFound:FindFirstChild("Hitbox") and char and char:FindFirstChild("HumanoidRootPart") then
+                        -- Teleport to Hitbox
+                        char:MoveTo(npcFound.Hitbox.Position + Vector3.new(0, 3, 0))
                     end
-                    task.wait(0.3) -- adjust speed as needed
+
+                    task.wait(0.3)
                 end
             end)
         end
