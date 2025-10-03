@@ -1,4 +1,4 @@
--- Load Rayfield
+-- Rayfield UI Loader
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
@@ -14,25 +14,31 @@ local Window = Rayfield:CreateWindow({
 
 local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
 
--- NPC Folder (deep path)
+-- Enemy folder
 local npcRoot = workspace:WaitForChild("__Main"):WaitForChild("__Enemies"):WaitForChild("Server")
 
--- Function to get all NPCs
-local function getNPCs()
-    local list = {}
-    for _, zone in pairs(npcRoot:GetChildren()) do
-        for _, npc in pairs(zone:GetChildren()) do
-            table.insert(list, npc.Name)
+-- Get all NPCs with display names
+local npcList = {}
+local npcMap = {} -- Maps display name → NPC model
+
+for _, zone in pairs(npcRoot:GetChildren()) do
+    for _, npc in pairs(zone:GetChildren()) do
+        local displayName = npc.Name
+        if npc:FindFirstChild("Humanoid") then
+            displayName = npc.Humanoid.DisplayName or npc.Name
+        elseif npc:FindFirstChild("Head") and npc.Head:FindFirstChild("NameTag") then
+            displayName = npc.Head.NameTag.Text or npc.Name
         end
+        table.insert(npcList, displayName)
+        npcMap[displayName] = npc
     end
-    return list
 end
 
-local npcList = getNPCs()
 local selectedNPC = npcList[1]
 local autofarm = false
+local attackRemote = nil
 
--- Dropdown for NPCs
+-- Dropdown for NPC selection
 FarmTab:CreateDropdown({
     Name = "Select NPC",
     Options = npcList,
@@ -43,7 +49,24 @@ FarmTab:CreateDropdown({
     end,
 })
 
--- Toggle Auto Farm
+-- Remote spy to detect attack event
+local mt = getrawmetatable(game)
+local old = mt.__namecall
+setreadonly(mt, false)
+
+mt.__namecall = newcclosure(function(self, ...)
+    local args = {...}
+    local method = getnamecallmethod()
+    if method == "FireServer" or method == "InvokeServer" then
+        if tostring(self) ~= "" and tostring(self) ~= "nil" then
+            print("[REMOTE DETECTED]", tostring(self))
+            attackRemote = self
+        end
+    end
+    return old(self, unpack(args))
+end)
+
+-- Toggle for Auto Farm
 FarmTab:CreateToggle({
     Name = "Auto Farm NPC",
     CurrentValue = false,
@@ -53,21 +76,20 @@ FarmTab:CreateToggle({
         if autofarm then
             task.spawn(function()
                 while autofarm do
+                    local npc = npcMap[selectedNPC]
                     local char = game.Players.LocalPlayer.Character
-                    if not char then break end
-                    
-                    for _, zone in pairs(npcRoot:GetChildren()) do
-                        local npc = zone:FindFirstChild(selectedNPC)
-                        if npc and npc:FindFirstChild("HumanoidRootPart") then
-                            -- Teleport close to NPC
-                            char:MoveTo(npc.HumanoidRootPart.Position + Vector3.new(0, 3, 0))
-
-                            -- Attack (basic click — might need RemoteEvent for real damage)
+                    if npc and npc:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
+                        -- Teleport close to NPC
+                        char:MoveTo(npc.HumanoidRootPart.Position + Vector3.new(0, 3, 0))
+                        
+                        -- Attack via RemoteEvent
+                        if attackRemote then
+                            attackRemote:FireServer(npc)
+                        else
                             game:GetService("VirtualUser"):ClickButton1(Vector2.new(0,0))
                         end
                     end
-                    
-                    task.wait(0.5)
+                    task.wait(0.5) -- adjust attack speed
                 end
             end)
         end
