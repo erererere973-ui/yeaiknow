@@ -13,19 +13,30 @@ local Window = Rayfield:CreateWindow({
 
 local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
 
--- Wait for enemies to load
-local npcRoot
-repeat
-    npcRoot = workspace:FindFirstChild("__Main") and workspace.__Main:FindFirstChild("__Enemies") and workspace.__Main.__Enemies:FindFirstChild("Client")
-    task.wait(1)
-until npcRoot
-
-local npcList = {}
+local npcList = {"No NPCs Found"}
 local npcMap = {}
+local selectedNPC = ""
+local autofarm = false
 
+-- Create dropdown with placeholder list
+local dropdown = FarmTab:CreateDropdown({
+    Name = "Select NPC",
+    Options = npcList,
+    CurrentOption = npcList[1],
+    Flag = "NPCDropdown",
+    Callback = function(option)
+        selectedNPC = option
+    end,
+})
+
+-- Function to scan NPCs
 local function scanNPCs()
+    local npcRoot = workspace:FindFirstChild("__Main") and workspace.__Main:FindFirstChild("__Enemies") and workspace.__Main.__Enemies:FindFirstChild("Client")
+    if not npcRoot then return end
+
     npcList = {}
     npcMap = {}
+
     for _, npc in pairs(npcRoot:GetChildren()) do
         local displayName = npc.Name
         if npc:FindFirstChild("Humanoid") and npc.Humanoid.DisplayName then
@@ -43,25 +54,24 @@ local function scanNPCs()
             npcMap[displayName] = npc
         end
     end
+
+    if #npcList == 0 then
+        table.insert(npcList, "No NPCs Found")
+    end
+
+    dropdown:UpdateOptions(npcList) -- update dropdown dynamically
+    selectedNPC = npcList[1] or ""
 end
 
-scanNPCs()
-
-local selectedNPC = npcList[1] or ""
-local autofarm = false
-
--- Dropdown
-FarmTab:CreateDropdown({
-    Name = "Select NPC",
-    Options = npcList,
-    CurrentOption = selectedNPC,
-    Flag = "NPCDropdown",
-    Callback = function(option)
-        selectedNPC = option
-    end,
+-- Add a refresh button
+FarmTab:CreateButton({
+    Name = "Refresh NPC List",
+    Callback = function()
+        scanNPCs()
+    end
 })
 
--- Toggle
+-- Toggle Auto Farm
 FarmTab:CreateToggle({
     Name = "Auto Farm NPC",
     CurrentValue = false,
@@ -73,6 +83,9 @@ FarmTab:CreateToggle({
         if autofarm then
             task.spawn(function()
                 while autofarm do
+                    local npcRoot = workspace:FindFirstChild("__Main") and workspace.__Main:FindFirstChild("__Enemies") and workspace.__Main.__Enemies:FindFirstChild("Client")
+                    if not npcRoot then task.wait(1) continue end
+
                     local npcFound = nil
                     for _, npc in pairs(npcRoot:GetChildren()) do
                         local name = npc.Name
@@ -102,3 +115,6 @@ FarmTab:CreateToggle({
         end
     end,
 })
+
+-- Initial scan
+scanNPCs()
