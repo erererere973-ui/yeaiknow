@@ -1,4 +1,39 @@
--- Load Rayfield UI
+-- Wait until NPC folder exists
+local npcRoot = workspace:WaitForChild("__Main"):WaitForChild("__Enemies"):WaitForChild("Client")
+
+-- Scan NPCs before building dropdown
+local npcList = {}
+local npcMap = {}
+
+local function scanNPCs()
+    npcList = {}
+    npcMap = {}
+    for _, npc in pairs(npcRoot:GetChildren()) do
+        local displayName = npc.Name
+        if npc:FindFirstChild("Humanoid") and npc.Humanoid.DisplayName then
+            displayName = npc.Humanoid.DisplayName
+        elseif npc:FindFirstChild("Head") and npc.Head:FindFirstChild("NameTag") then
+            displayName = npc.Head.NameTag.Text
+        elseif npc:FindFirstChild("DisplayName") then
+            displayName = npc.DisplayName.Value
+        elseif npc:GetAttribute("DisplayName") then
+            displayName = npc:GetAttribute("DisplayName")
+        end
+
+        if not npcMap[displayName] then
+            table.insert(npcList, displayName)
+            npcMap[displayName] = npc.Name
+        end
+    end
+
+    if #npcList == 0 then
+        table.insert(npcList, "No NPCs Found")
+    end
+end
+
+scanNPCs() -- important: scan before UI creation
+
+-- Create UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
@@ -14,41 +49,10 @@ local Window = Rayfield:CreateWindow({
 
 local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
 
--- Enemy root inside Client
-local npcRoot = workspace:WaitForChild("__Main"):WaitForChild("__Enemies"):WaitForChild("Client")
-
-local npcList = {}
-local npcMap = {}
-
-local function scanNPCs()
-    npcList = {}
-    npcMap = {}
-    for _, npc in pairs(npcRoot:GetChildren()) do
-        local displayName = npc.Name
-
-        if npc:FindFirstChild("Humanoid") and npc.Humanoid.DisplayName then
-            displayName = npc.Humanoid.DisplayName
-        elseif npc:FindFirstChild("Head") and npc.Head:FindFirstChild("NameTag") then
-            displayName = npc.Head.NameTag.Text
-        elseif npc:FindFirstChild("DisplayName") then
-            displayName = npc.DisplayName.Value
-        elseif npc:GetAttribute("DisplayName") then
-            displayName = npc:GetAttribute("DisplayName")
-        end
-
-        if not npcMap[displayName] then
-            table.insert(npcList, displayName)
-            npcMap[displayName] = npc.Name -- store NPC id
-        end
-    end
-end
-
-scanNPCs()
-
 local selectedNPC = npcList[1] or ""
 local autofarm = false
 
--- Dropdown
+-- Dropdown for NPC selection
 FarmTab:CreateDropdown({
     Name = "Select NPC",
     Options = npcList,
@@ -73,10 +77,8 @@ FarmTab:CreateToggle({
                 while autofarm do
                     local npcFound = nil
 
-                    -- Search for selected NPC live
                     for _, npc in pairs(npcRoot:GetChildren()) do
                         local name = npc.Name
-
                         if npc:FindFirstChild("Humanoid") and npc.Humanoid.DisplayName then
                             name = npc.Humanoid.DisplayName
                         elseif npc:FindFirstChild("Head") and npc.Head:FindFirstChild("NameTag") then
@@ -95,7 +97,6 @@ FarmTab:CreateToggle({
 
                     local char = game.Players.LocalPlayer.Character
                     if npcFound and npcFound:FindFirstChild("Hitbox") and char and char:FindFirstChild("HumanoidRootPart") then
-                        -- Teleport to Hitbox
                         char:MoveTo(npcFound.Hitbox.Position + Vector3.new(0, 3, 0))
                     end
 
