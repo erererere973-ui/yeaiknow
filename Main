@@ -1,7 +1,25 @@
--- Wait until NPC folder exists
-local npcRoot = workspace:WaitForChild("__Main"):WaitForChild("__Enemies"):WaitForChild("Client")
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Scan NPCs before building dropdown
+local Window = Rayfield:CreateWindow({
+    Name = "Arise Crossover - Rimuru Hub",
+    LoadingTitle = "Predator Mode Activated",
+    LoadingSubtitle = "by Rimuru 😈",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "AriseCrossoverHub",
+        FileName = "Config"
+    }
+})
+
+local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
+
+-- Wait for enemies to load
+local npcRoot
+repeat
+    npcRoot = workspace:FindFirstChild("__Main") and workspace.__Main:FindFirstChild("__Enemies") and workspace.__Main.__Enemies:FindFirstChild("Client")
+    task.wait(1)
+until npcRoot
+
 local npcList = {}
 local npcMap = {}
 
@@ -22,37 +40,17 @@ local function scanNPCs()
 
         if not npcMap[displayName] then
             table.insert(npcList, displayName)
-            npcMap[displayName] = npc.Name
+            npcMap[displayName] = npc
         end
-    end
-
-    if #npcList == 0 then
-        table.insert(npcList, "No NPCs Found")
     end
 end
 
-scanNPCs() -- important: scan before UI creation
-
--- Create UI
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
-local Window = Rayfield:CreateWindow({
-    Name = "Arise Crossover - Rimuru Hub",
-    LoadingTitle = "Predator Mode Activated",
-    LoadingSubtitle = "by Rimuru 😈",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "AriseCrossoverHub",
-        FileName = "Config"
-    }
-})
-
-local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
+scanNPCs()
 
 local selectedNPC = npcList[1] or ""
 local autofarm = false
 
--- Dropdown for NPC selection
+-- Dropdown
 FarmTab:CreateDropdown({
     Name = "Select NPC",
     Options = npcList,
@@ -63,7 +61,7 @@ FarmTab:CreateDropdown({
     end,
 })
 
--- Toggle Auto Farm
+-- Toggle
 FarmTab:CreateToggle({
     Name = "Auto Farm NPC",
     CurrentValue = false,
@@ -76,7 +74,6 @@ FarmTab:CreateToggle({
             task.spawn(function()
                 while autofarm do
                     local npcFound = nil
-
                     for _, npc in pairs(npcRoot:GetChildren()) do
                         local name = npc.Name
                         if npc:FindFirstChild("Humanoid") and npc.Humanoid.DisplayName then
@@ -99,7 +96,6 @@ FarmTab:CreateToggle({
                     if npcFound and npcFound:FindFirstChild("Hitbox") and char and char:FindFirstChild("HumanoidRootPart") then
                         char:MoveTo(npcFound.Hitbox.Position + Vector3.new(0, 3, 0))
                     end
-
                     task.wait(0.3)
                 end
             end)
