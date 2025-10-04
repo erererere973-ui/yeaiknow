@@ -37,7 +37,10 @@ local npcDropdown = FarmTab:CreateDropdown({
 -- Function to scan NPCs dynamically
 local function scanNPCs()
     local npcRoot = workspace:FindFirstChild("__Main") and workspace.__Main:FindFirstChild("__Enemies") and workspace.__Main.__Enemies:FindFirstChild("Client")
-    if not npcRoot then return end
+    if not npcRoot then
+        warn("[RimuruHub] No NPC root found.")
+        return
+    end
 
     npcList = {}
     npcMap = {}
@@ -46,12 +49,12 @@ local function scanNPCs()
         local displayName = npc.Name
         if npc:FindFirstChild("Humanoid") and npc.Humanoid.DisplayName then
             displayName = npc.Humanoid.DisplayName
+        elseif npc:FindFirstChild("Head") and npc.Head:FindFirstChild("NameTag") then
+            displayName = npc.Head.NameTag.Text
         end
 
-        if not npcMap[displayName] then
-            table.insert(npcList, displayName)
-            npcMap[displayName] = npc
-        end
+        npcList[#npcList+1] = displayName
+        npcMap[displayName] = npc
     end
 
     if #npcList == 0 then
@@ -82,27 +85,18 @@ FarmTab:CreateToggle({
         if autofarm then
             task.spawn(function()
                 while autofarm do
-                    local npcRoot = workspace:FindFirstChild("__Main") and workspace.__Main:FindFirstChild("__Enemies") and workspace.__Main.__Enemies:FindFirstChild("Client")
-                    if npcRoot and selectedNPC ~= "" then
-                        local npc = nil
-                        for _, v in pairs(npcRoot:GetChildren()) do
-                            local name = v.Name
-                            if v:FindFirstChild("Humanoid") and v.Humanoid.DisplayName then
-                                name = v.Humanoid.DisplayName
-                            end
-                            if name == selectedNPC then
-                                npc = v
-                                break
-                            end
-                        end
+                    if selectedNPC == "" or selectedNPC == "No NPCs Found" then
+                        task.wait(1)
+                        continue
+                    end
 
-                        local char = LocalPlayer.Character
-                        if npc and npc:FindFirstChild("Hitbox") and char and char:FindFirstChild("HumanoidRootPart") then
-                            char.HumanoidRootPart.CFrame = CFrame.new(npc.Hitbox.Position + Vector3.new(0, 3, 0))
-                            LocalPlayer:SetAttribute("AutoClick", true)
-                        else
-                            LocalPlayer:SetAttribute("AutoClick", false)
-                        end
+                    local npc = npcMap[selectedNPC]
+                    local char = LocalPlayer.Character
+                    if npc and npc:FindFirstChild("Hitbox") and char and char:FindFirstChild("HumanoidRootPart") then
+                        char.HumanoidRootPart.CFrame = CFrame.new(npc.Hitbox.Position + Vector3.new(0, 3, 0))
+                        LocalPlayer:SetAttribute("AutoClick", true)
+                    else
+                        LocalPlayer:SetAttribute("AutoClick", false)
                     end
                     task.wait(0.2)
                 end
