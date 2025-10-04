@@ -46,8 +46,6 @@ local function scanNPCs()
         local displayName = npc.Name
         if npc:FindFirstChild("Humanoid") and npc.Humanoid.DisplayName then
             displayName = npc.Humanoid.DisplayName
-        elseif npc:FindFirstChild("Head") and npc.Head:FindFirstChild("NameTag") then
-            displayName = npc.Head.NameTag.Text
         end
 
         if not npcMap[displayName] then
@@ -60,7 +58,7 @@ local function scanNPCs()
         table.insert(npcList, "No NPCs Found")
     end
 
-    npcDropdown:UpdateOptions(npcList) -- Update dropdown
+    npcDropdown:UpdateOptions(npcList)
     selectedNPC = npcList[1] or ""
 end
 
@@ -100,7 +98,6 @@ FarmTab:CreateToggle({
 
                         local char = LocalPlayer.Character
                         if npc and npc:FindFirstChild("Hitbox") and char and char:FindFirstChild("HumanoidRootPart") then
-                            -- teleport to NPC
                             char.HumanoidRootPart.CFrame = CFrame.new(npc.Hitbox.Position + Vector3.new(0, 3, 0))
                             LocalPlayer:SetAttribute("AutoClick", true)
                         else
@@ -136,6 +133,6 @@ for _, boostName in pairs(boosts) do
     })
 end
 
--- Initial scan
+-- Initial NPC scan
 task.wait(3)
 scanNPCs()
