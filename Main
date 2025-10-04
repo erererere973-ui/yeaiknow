@@ -2,7 +2,6 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local RunService = game:GetService("RunService")
 
 local Window = Rayfield:CreateWindow({
     Name = "Rimuru OP Hub - Arise Crossover",
@@ -18,12 +17,39 @@ local Window = Rayfield:CreateWindow({
 -- Auto Farm Tab
 local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
 
-local npcList = {"No NPCs Found"}
-local npcMap = {}
-local selectedNPC = ""
+local npcList = {
+    "NPC 1b8116dc9f484d4faa87ef59ea836923",
+    "NPC 27c34f6ca30f4b409a8304053f5e45b6",
+    "NPC 36aa3453dccb4c2ab33ee5c573c2833b",
+    "NPC 4fa8d736a3f749ccbc0f4989ed3f4472",
+    "NPC 595c3cb8aa124d2a8a2f90de5b5de3d2",
+    "NPC 6463f76454f042eca313ed76c8d2729e",
+    "NPC 64e84d8222e5418ea08d538b74b8f02f",
+    "NPC 6aa73466ea474ddd87d7aca512dccd7c",
+    "NPC 6baee8d782c7479d9403a2353c8630de",
+    "NPC 7121b513c608408bb5073b7cd2e798f9",
+    "NPC 86e77407733e4efb8840f27a4e12d971",
+    "NPC 96044668b7f1429fb8e8a11654b420a9"
+}
+
+local npcMap = {
+    ["NPC 1b8116dc9f484d4faa87ef59ea836923"] = workspace.__Main.__Enemies.Client["1b8116dc9f484d4faa87ef59ea836923"],
+    ["NPC 27c34f6ca30f4b409a8304053f5e45b6"] = workspace.__Main.__Enemies.Client["27c34f6ca30f4b409a8304053f5e45b6"],
+    ["NPC 36aa3453dccb4c2ab33ee5c573c2833b"] = workspace.__Main.__Enemies.Client["36aa3453dccb4c2ab33ee5c573c2833b"],
+    ["NPC 4fa8d736a3f749ccbc0f4989ed3f4472"] = workspace.__Main.__Enemies.Client["4fa8d736a3f749ccbc0f4989ed3f4472"],
+    ["NPC 595c3cb8aa124d2a8a2f90de5b5de3d2"] = workspace.__Main.__Enemies.Client["595c3cb8aa124d2a8a2f90de5b5de3d2"],
+    ["NPC 6463f76454f042eca313ed76c8d2729e"] = workspace.__Main.__Enemies.Client["6463f76454f042eca313ed76c8d2729e"],
+    ["NPC 64e84d8222e5418ea08d538b74b8f02f"] = workspace.__Main.__Enemies.Client["64e84d8222e5418ea08d538b74b8f02f"],
+    ["NPC 6aa73466ea474ddd87d7aca512dccd7c"] = workspace.__Main.__Enemies.Client["6aa73466ea474ddd87d7aca512dccd7c"],
+    ["NPC 6baee8d782c7479d9403a2353c8630de"] = workspace.__Main.__Enemies.Client["6baee8d782c7479d9403a2353c8630de"],
+    ["NPC 7121b513c608408bb5073b7cd2e798f9"] = workspace.__Main.__Enemies.Client["7121b513c608408bb5073b7cd2e798f9"],
+    ["NPC 86e77407733e4efb8840f27a4e12d971"] = workspace.__Main.__Enemies.Client["86e77407733e4efb8840f27a4e12d971"],
+    ["NPC 96044668b7f1429fb8e8a11654b420a9"] = workspace.__Main.__Enemies.Client["96044668b7f1429fb8e8a11654b420a9"]
+}
+
+local selectedNPC = npcList[1]
 local autofarm = false
 
--- Create Dropdown for NPC Selection
 local npcDropdown = FarmTab:CreateDropdown({
     Name = "Select NPC",
     Options = npcList,
@@ -34,46 +60,6 @@ local npcDropdown = FarmTab:CreateDropdown({
     end,
 })
 
--- Function to scan NPCs dynamically
-local function scanNPCs()
-    local npcRoot = workspace:FindFirstChild("__Main") and workspace.__Main:FindFirstChild("__Enemies") and workspace.__Main.__Enemies:FindFirstChild("Client")
-    if not npcRoot then
-        warn("[RimuruHub] No NPC root found.")
-        return
-    end
-
-    npcList = {}
-    npcMap = {}
-
-    for _, npc in pairs(npcRoot:GetChildren()) do
-        local displayName = npc.Name
-        if npc:FindFirstChild("Humanoid") and npc.Humanoid.DisplayName then
-            displayName = npc.Humanoid.DisplayName
-        elseif npc:FindFirstChild("Head") and npc.Head:FindFirstChild("NameTag") then
-            displayName = npc.Head.NameTag.Text
-        end
-
-        npcList[#npcList+1] = displayName
-        npcMap[displayName] = npc
-    end
-
-    if #npcList == 0 then
-        table.insert(npcList, "No NPCs Found")
-    end
-
-    npcDropdown:UpdateOptions(npcList)
-    selectedNPC = npcList[1] or ""
-end
-
--- Refresh NPC List Button
-FarmTab:CreateButton({
-    Name = "Refresh NPC List",
-    Callback = function()
-        scanNPCs()
-    end
-})
-
--- Toggle Auto Farm
 FarmTab:CreateToggle({
     Name = "Auto Farm NPC",
     CurrentValue = false,
@@ -85,11 +71,6 @@ FarmTab:CreateToggle({
         if autofarm then
             task.spawn(function()
                 while autofarm do
-                    if selectedNPC == "" or selectedNPC == "No NPCs Found" then
-                        task.wait(1)
-                        continue
-                    end
-
                     local npc = npcMap[selectedNPC]
                     local char = LocalPlayer.Character
                     if npc and npc:FindFirstChild("Hitbox") and char and char:FindFirstChild("HumanoidRootPart") then
@@ -104,29 +85,3 @@ FarmTab:CreateToggle({
         end
     end,
 })
-
--- Auto Boost Tab
-local BoostTab = Window:CreateTab("Auto Boosts", 4483362458)
-local boosts = {
-    "Shadow", "SwordDamage", "Drops", "Gems", "Coins", "Exp", "AriseTry", "EnemyKill"
-}
-
-for _, boostName in pairs(boosts) do
-    BoostTab:CreateButton({
-        Name = "Activate "..boostName.." Boost",
-        Callback = function()
-            local success, err = pcall(function()
-                game:GetService("ReplicatedStorage").Remotes.ActivateBoost:InvokeServer(boostName)
-            end)
-            if success then
-                print("[Boost] Activated:", boostName)
-            else
-                warn("[Boost] Failed:", boostName, err)
-            end
-        end
-    })
-end
-
--- Initial NPC scan
-task.wait(3)
-scanNPCs()
