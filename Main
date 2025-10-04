@@ -1,7 +1,11 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
 local Window = Rayfield:CreateWindow({
-    Name = "Arise Crossover Hub",
+    Name = "Rimuru OP Hub - Arise Crossover",
     LoadingTitle = "Predator Mode Activated",
     LoadingSubtitle = "by Rimuru 😈",
     ConfigurationSaving = {
@@ -11,6 +15,7 @@ local Window = Rayfield:CreateWindow({
     }
 })
 
+-- Auto Farm Tab
 local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
 
 local npcList = {"No NPCs Found"}
@@ -18,10 +23,8 @@ local npcMap = {}
 local selectedNPC = ""
 local autofarm = false
 
-local npcDropdown
-
--- Create Dropdown with placeholder
-npcDropdown = FarmTab:CreateDropdown({
+-- Create Dropdown for NPC Selection
+local npcDropdown = FarmTab:CreateDropdown({
     Name = "Select NPC",
     Options = npcList,
     CurrentOption = npcList[1],
@@ -45,10 +48,6 @@ local function scanNPCs()
             displayName = npc.Humanoid.DisplayName
         elseif npc:FindFirstChild("Head") and npc.Head:FindFirstChild("NameTag") then
             displayName = npc.Head.NameTag.Text
-        elseif npc:FindFirstChild("DisplayName") then
-            displayName = npc.DisplayName.Value
-        elseif npc:GetAttribute("DisplayName") then
-            displayName = npc:GetAttribute("DisplayName")
         end
 
         if not npcMap[displayName] then
@@ -61,11 +60,11 @@ local function scanNPCs()
         table.insert(npcList, "No NPCs Found")
     end
 
-    npcDropdown:UpdateOptions(npcList) -- update dropdown live
+    npcDropdown:UpdateOptions(npcList) -- Update dropdown
     selectedNPC = npcList[1] or ""
 end
 
--- Add Refresh Button
+-- Refresh NPC List Button
 FarmTab:CreateButton({
     Name = "Refresh NPC List",
     Callback = function()
@@ -80,44 +79,63 @@ FarmTab:CreateToggle({
     Flag = "AutoFarmToggle",
     Callback = function(Value)
         autofarm = Value
-        game.Players.LocalPlayer:SetAttribute("AutoClick", Value)
+        LocalPlayer:SetAttribute("AutoClick", Value)
 
         if autofarm then
             task.spawn(function()
                 while autofarm do
                     local npcRoot = workspace:FindFirstChild("__Main") and workspace.__Main:FindFirstChild("__Enemies") and workspace.__Main.__Enemies:FindFirstChild("Client")
-                    if not npcRoot then task.wait(1) continue end
-
-                    local npcFound = nil
-                    for _, npc in pairs(npcRoot:GetChildren()) do
-                        local name = npc.Name
-                        if npc:FindFirstChild("Humanoid") and npc.Humanoid.DisplayName then
-                            name = npc.Humanoid.DisplayName
-                        elseif npc:FindFirstChild("Head") and npc.Head:FindFirstChild("NameTag") then
-                            name = npc.Head.NameTag.Text
-                        elseif npc:FindFirstChild("DisplayName") then
-                            name = npc.DisplayName.Value
-                        elseif npc:GetAttribute("DisplayName") then
-                            name = npc:GetAttribute("DisplayName")
+                    if npcRoot and selectedNPC ~= "" then
+                        local npc = nil
+                        for _, v in pairs(npcRoot:GetChildren()) do
+                            local name = v.Name
+                            if v:FindFirstChild("Humanoid") and v.Humanoid.DisplayName then
+                                name = v.Humanoid.DisplayName
+                            end
+                            if name == selectedNPC then
+                                npc = v
+                                break
+                            end
                         end
 
-                        if name == selectedNPC then
-                            npcFound = npc
-                            break
+                        local char = LocalPlayer.Character
+                        if npc and npc:FindFirstChild("Hitbox") and char and char:FindFirstChild("HumanoidRootPart") then
+                            -- teleport to NPC
+                            char.HumanoidRootPart.CFrame = CFrame.new(npc.Hitbox.Position + Vector3.new(0, 3, 0))
+                            LocalPlayer:SetAttribute("AutoClick", true)
+                        else
+                            LocalPlayer:SetAttribute("AutoClick", false)
                         end
                     end
-
-                    local char = game.Players.LocalPlayer.Character
-                    if npcFound and npcFound:FindFirstChild("Hitbox") and char and char:FindFirstChild("HumanoidRootPart") then
-                        char:MoveTo(npcFound.Hitbox.Position + Vector3.new(0, 3, 0))
-                    end
-                    task.wait(0.3)
+                    task.wait(0.2)
                 end
             end)
         end
     end,
 })
 
--- Initial scan after 3 seconds to wait for enemies
+-- Auto Boost Tab
+local BoostTab = Window:CreateTab("Auto Boosts", 4483362458)
+local boosts = {
+    "Shadow", "SwordDamage", "Drops", "Gems", "Coins", "Exp", "AriseTry", "EnemyKill"
+}
+
+for _, boostName in pairs(boosts) do
+    BoostTab:CreateButton({
+        Name = "Activate "..boostName.." Boost",
+        Callback = function()
+            local success, err = pcall(function()
+                game:GetService("ReplicatedStorage").Remotes.ActivateBoost:InvokeServer(boostName)
+            end)
+            if success then
+                print("[Boost] Activated:", boostName)
+            else
+                warn("[Boost] Failed:", boostName, err)
+            end
+        end
+    })
+end
+
+-- Initial scan
 task.wait(3)
 scanNPCs()
